@@ -9,13 +9,15 @@
 #import "ViewController.h"
 #import "ListModel.h"
 #import "DetailViewController.h"
+#import "UserModel.h"
 
 #define URLSTR @"http://ipad-bjwb.bjd.com.cn/DigitalPublication/publish/Handler/APINewsList.ashx?date=20131129&startRecord=1&len=5&udid=1234567890&terminalType=Iphone&cid=213"
 
 @interface ViewController ()<UITableViewDelegate,UITableViewDataSource>
 
-@property (nonatomic, strong)NSMutableArray *dataSource;
-@property (nonatomic, strong)UITableView *tableView;
+@property (nonatomic, strong) NSMutableArray *dataSource;
+@property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) UserModel *userModel;
 
 @end
 
@@ -23,17 +25,41 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    self.title = @"新闻";
+    [self addBtn];
     
-    _dataSource = [[NSMutableArray alloc]initWithCapacity:0];
+    self.title = @"新闻";
+    _userModel = [[UserModel alloc]init];
+    _dataSource = [[NSMutableArray alloc]initWithCapacity:5];
     [self.view addSubview:self.tableView];
 
-    //创建一个异步队列解析 json，防止阻塞主线程
-    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
-    dispatch_async(queue, ^{
-        [self urlStr];
-    });
+    [self isRequestData];
+}
+
+#pragma mark - 添加一个删除数据库的按钮
+- (void)addBtn {
+    UIBarButtonItem *item = [[UIBarButtonItem alloc]initWithTitle:@"delete" style:UIBarButtonItemStylePlain target:self action:@selector(deleteSqlite)];
+    self.navigationItem.rightBarButtonItem = item;
+}
+
+#pragma mark 删除数据库按钮方法
+- (void)deleteSqlite {
+    [_userModel delteSqlite];
+}
+
+#pragma mark - 本地数据库有值就不请求数据,取本地数据库值
+- (void)isRequestData {
+    if ([_userModel isSqliteExist]) {
+        _dataSource = [_userModel selectTable];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [_tableView reloadData];
+        });
+    }else{
+        //创建一个异步队列解析 json，防止阻塞主线程
+        dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+        dispatch_async(queue, ^{
+            [self urlStr];
+        });
+    }
 }
 
 #pragma mark -- 解析 JSON

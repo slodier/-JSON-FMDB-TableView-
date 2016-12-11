@@ -7,22 +7,24 @@
 //
 
 #import "ListModel.h"
+#import "UserModel.h"
 
 @implementation ListModel
 
 - (void)createArray:(NSDictionary *)result
          dataSource:(NSMutableArray *)dataSource
 {
+    UserModel *userModel = [[UserModel alloc]init];
     NSArray *array = result[@"news"];
     for (NSDictionary *dict in array) {
         ListModel *listModel = [[ListModel alloc]init];
-        listModel.cname      = dict[@"cname"];
-        listModel.time     = dict[@"lastUpdateTime"];
-        listModel.summary    = dict[@"summary"];
-        listModel.title      = dict[@"title"];
-        listModel.type       = dict[@"type"];
+        listModel.cname      = [NSString stringWithFormat:@"%@",dict[@"cname"]];
+        listModel.summary    = [NSString stringWithFormat:@"%@",dict[@"summary"]];
+        listModel.title      = [NSString stringWithFormat:@"%@",dict[@"title"]];
+        listModel.type       = [NSString stringWithFormat:@"%@",dict[@"type"]];
+        listModel.time       = [NSString stringWithFormat:@"%@",dict[@"lastUpdateTime"]];
         [dataSource addObject:listModel];
-        NSLog(@"%@",listModel.title);
+        //NSLog(@"cname:%@",listModel.type);
         
         //时间戳转换为时间
         NSDate *startDate = [NSDate dateWithTimeIntervalSince1970:[listModel.time integerValue]];
@@ -30,6 +32,9 @@
         [formatter setDateFormat:@"yy-MM-dd"];
         NSString *beginStr = [formatter stringFromDate:startDate];
         listModel.time = beginStr;
+        if (!([userModel selectTable].count > 5)) {
+            [userModel insert:listModel];
+        }
     }
 }
 
